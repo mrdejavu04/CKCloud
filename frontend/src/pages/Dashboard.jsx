@@ -52,10 +52,10 @@ function Dashboard() {
         try {
             await axiosClient.post("/api/transactions", {
                 amount: Number(amount),
-                category,
+                categoryName: category,
                 type,
-                description,
-                date: new Date()
+                note: description,
+                date: new Date().toISOString()
             });
 
             alert("Thêm thành công!");
@@ -349,11 +349,11 @@ function Dashboard() {
                                         {t.type === "income" ? "↓" : "↑"}
                                     </div>
                                     <div style={{ minWidth: 0 }}>
-                                        <strong style={{ fontSize: "13px", color: "#1e3c72", display: "block", marginBottom: "2px" }}>{t.category}</strong>
+                                        <strong style={{ fontSize: "13px", color: "#1e3c72", display: "block", marginBottom: "2px" }}>{t.category || t.categoryName}</strong>
                                         <div style={{ fontSize: "11px", color: "#7a8fa6", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                            {t.description || "Không có ghi chú"}
+                                            {t.description || t.note || "Không có ghi chú"}
                                             <span style={{ fontSize: "10px", color: "#b0bcc6", marginLeft: "6px" }}>
-                                                • {new Date(t.date || Date.now()).toLocaleDateString("vi-VN", { month: "2-digit", day: "2-digit" })}
+                                                • {new Date(t.date || Date.now()).toLocaleDateString("vi-VN", { year: "numeric", month: "2-digit", day: "2-digit" })} {new Date(t.date || Date.now()).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                                             </span>
                                         </div>
                                     </div>
