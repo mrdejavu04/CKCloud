@@ -1,5 +1,6 @@
 import express from 'express';
 import Category from '../models/Category.js';
+import Reminder from '../models/Reminder.js';
 import Transaction from '../models/Transaction.js';
 import auth from '../middleware/auth.js';
 
@@ -7,9 +8,20 @@ const router = express.Router();
 
 router.use(auth);
 
+const normalizeVietnamese = (str) => {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+};
+
 router.get('/', async (req, res) => {
   try {
     const { type, categoryId, from, to } = req.query;
+    const { page = 1, limit = 15 } = req.query;
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 15;
     const query = { userId: req.userId };
 
     if (type && ['income', 'expense'].includes(type)) {
@@ -24,22 +36,40 @@ router.get('/', async (req, res) => {
       if (to) query.date.$lte = new Date(to);
     }
 
-    const transactions = await Transaction.find(query).sort({ date: -1 });
-    return res.json({ transactions });
+    const [transactions, total] = await Promise.all([
+      Transaction.find(query)
+        .sort({ date: -1, createdAt: -1 })
+        .skip((pageNum - 1) * limitNum)
+        .limit(limitNum),
+      Transaction.countDocuments(query),
+    ]);
+
+    return res.json({
+      data: transactions,
+      pagination: {
+        page,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum),
+      },
+    });
   } catch (error) {
-    return res.status(500).json({ message: 'Failed to fetch transactions', error: error.message });
+    return res.status(500).json({ message: 'Server error' });
   }
 });
 
 router.post('/', async (req, res) => {
   try {
-    const { amount, type, categoryId, categoryName, note, date } = req.body;
-    if (!amount || !type || !date) {
-      return res.status(400).json({ message: 'Amount, type, and date are required' });
+    let { amount, type, categoryId, categoryName, note, dateTime } = req.body;
+    if (!amount || !type) {
+      return res.status(400).json({ message: 'Amount and type are required' });
     }
     if (!['income', 'expense'].includes(type)) {
       return res.status(400).json({ message: 'Type must be income or expense' });
     }
+
+    const txDate = dateTime ? new Date(dateTime) : new Date();
+    txDate.setSeconds(0, 0);
 
     let resolvedCategoryName = categoryName;
     if (categoryId) {
@@ -56,30 +86,52 @@ router.post('/', async (req, res) => {
       categoryId,
       categoryName: resolvedCategoryName,
       note,
-      date,
+      date: txDate,
     });
+
+    const normalized = normalizeVietnamese(resolvedCategoryName || categoryName || '');
+    if (type === 'expense' && normalized === 'hoa don') {
+      await Reminder.create({
+        userId: req.userId,
+        title: note || 'Hóa đơn',
+        amount,
+        dueDate: txDate,
+        status: 'pending',
+      });
+    }
 
     return res.status(201).json({ transaction });
   } catch (error) {
-    return res.status(500).json({ message: 'Failed to create transaction', error: error.message });
+    return res.status(500).json({ message: 'Server error' });
   }
 });
 
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
+    const { amount, type, categoryId, categoryName, note, date } = req.body;
+    const updates = {};
+
+    if (amount !== undefined) updates.amount = amount;
+    if (type !== undefined) updates.type = type;
+    if (categoryId !== undefined) updates.categoryId = categoryId;
+    if (categoryName !== undefined) updates.categoryName = categoryName;
+    if (note !== undefined) updates.note = note;
+    if (date !== undefined) updates.date = date;
+
     const transaction = await Transaction.findOneAndUpdate(
       { _id: id, userId: req.userId },
       updates,
       { new: true }
     );
+
     if (!transaction) {
       return res.status(404).json({ message: 'Transaction not found' });
     }
+
     return res.json({ transaction });
   } catch (error) {
-    return res.status(500).json({ message: 'Failed to update transaction', error: error.message });
+    return res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -90,9 +142,9 @@ router.delete('/:id', async (req, res) => {
     if (!deleted) {
       return res.status(404).json({ message: 'Transaction not found' });
     }
-    return res.json({ message: 'Transaction deleted' });
+    return res.json({ message: 'Deleted successfully' });
   } catch (error) {
-    return res.status(500).json({ message: 'Failed to delete transaction', error: error.message });
+    return res.status(500).json({ message: 'Server error' });
   }
 });
 

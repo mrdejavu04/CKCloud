@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import axiosClient from '../api/axiosClient';
 
 function Login() {
@@ -10,16 +10,21 @@ function Login() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
+    // Đảm bảo mỗi lần vào màn đăng nhập không dùng nhầm token cũ
+    useEffect(() => {
+        localStorage.removeItem('token');
+    }, []);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
         try {
             if (isLogin) {
-                const res = await axiosClient.post('/api/auth/login', { email, password });
+                const res = await axiosClient.post('/auth/login', { email, password });
                 localStorage.setItem('token', res.data.token);
             } else {
-                await axiosClient.post('/api/auth/register', { name, email, password });
+                await axiosClient.post('/auth/register', { name, email, password });
                 setIsLogin(true);
             }
             window.location.href = '/dashboard';

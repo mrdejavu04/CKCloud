@@ -5,7 +5,7 @@ const auth = (req, res, next) => {
   const [scheme, token] = authHeader.split(' ');
 
   if (scheme !== 'Bearer' || !token) {
-    return res.status(401).json({ message: 'Authorization token missing or invalid' });
+    return res.status(401).json({ message: 'Unauthorized' });
   }
 
   try {
@@ -13,7 +13,7 @@ const auth = (req, res, next) => {
     req.userId = decoded.userId;
     return next();
   } catch (error) {
-    return res.status(401).json({ message: 'Invalid or expired token' });
+    return res.status(401).json({ message: 'Unauthorized' });
   }
 };
 

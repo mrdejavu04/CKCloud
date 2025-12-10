@@ -10,9 +10,17 @@ router.use(auth);
 router.get('/summary', async (req, res) => {
   try {
     const userId = new mongoose.Types.ObjectId(req.userId);
+    const { from, to } = req.query;
+    const matchStage = { userId };
+
+    if (from || to) {
+      matchStage.date = {};
+      if (from) matchStage.date.$gte = new Date(from);
+      if (to) matchStage.date.$lte = new Date(to);
+    }
 
     const summary = await Transaction.aggregate([
-      { $match: { userId } },
+      { $match: matchStage },
       {
         $group: {
           _id: '$type',
@@ -22,14 +30,20 @@ router.get('/summary', async (req, res) => {
     ]);
 
     const byCategory = await Transaction.aggregate([
-      { $match: { userId } },
+      { $match: { ...matchStage, type: 'expense' } },
       {
         $group: {
           _id: '$categoryName',
           total: { $sum: '$amount' },
         },
       },
-      { $project: { _id: 0, categoryName: '$_id', total: 1 } },
+      {
+        $project: {
+          _id: 0,
+          categoryName: { $ifNull: ['$_id', 'Uncategorized'] },
+          total: 1,
+        },
+      },
     ]);
 
     const totals = summary.reduce(
@@ -50,7 +64,83 @@ router.get('/summary', async (req, res) => {
       byCategory,
     });
   } catch (error) {
-    return res.status(500).json({ message: 'Failed to build summary', error: error.message });
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.get('/monthly', async (req, res) => {
+  try {
+    const userId = new mongoose.Types.ObjectId(req.userId);
+    const year = parseInt(req.query.year, 10) || new Date().getFullYear();
+    const startDate = new Date(year, 0, 1);
+    const endDate = new Date(year + 1, 0, 1);
+
+    const monthlyData = await Transaction.aggregate([
+      {
+        $match: {
+          userId,
+          type: 'expense',
+          date: { $gte: startDate, $lt: endDate },
+        },
+      },
+      {
+        $group: {
+          _id: { $month: '$date' },
+          totalExpense: { $sum: '$amount' },
+        },
+      },
+    ]);
+
+    const monthly = Array.from({ length: 12 }, (_, i) => {
+      const month = i + 1;
+      const found = monthlyData.find((item) => item._id === month);
+      return {
+        month,
+        totalExpense: found ? found.totalExpense : 0,
+      };
+    });
+
+    return res.json({ year, monthly });
+  } catch (error) {
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.get('/by-category', async (req, res) => {
+  try {
+    const userId = new mongoose.Types.ObjectId(req.userId);
+    const now = new Date();
+    const year = parseInt(req.query.year, 10) || now.getFullYear();
+    const month = parseInt(req.query.month, 10) || now.getMonth() + 1;
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 1);
+
+    const byCategory = await Transaction.aggregate([
+      {
+        $match: {
+          userId,
+          type: 'expense',
+          date: { $gte: startDate, $lt: endDate },
+        },
+      },
+      {
+        $group: {
+          _id: '$categoryName',
+          total: { $sum: '$amount' },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          categoryName: { $ifNull: ['$_id', 'Uncategorized'] },
+          total: 1,
+        },
+      },
+    ]);
+
+    return res.json({ year, month, byCategory });
+  } catch (error) {
+    return res.status(500).json({ message: 'Server error' });
   }
 });
 

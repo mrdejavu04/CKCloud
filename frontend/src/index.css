@@ -1,81 +1,417 @@
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
+  color: #1f2a44;
+  background-color: #f4f6fb;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-
-a:hover {
-  color: #535bf2;
-}
-
-/* Ensure the app root can use the full viewport. Avoid centering the root globally
-   because some pages (like the dashboard) should span the full width. */
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  /* Use normal flow so child components can control their own layout */
-}
-
-/* Make root element full width/height so our React pages can occupy the whole viewport. */
-#root {
-  width: 100%;
-  height: 100%;
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #f4f6fb;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
 button {
-  border-radius: 8px;
+  border-radius: 10px;
   border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 600;
   font-family: inherit;
-  background-color: #1a1a1a;
   cursor: pointer;
-  transition: border-color 0.25s;
+  background: #2f6fed;
+  color: #fff;
+  transition: all 0.2s ease;
 }
 
-button:hover {
-  border-color: #646cff;
+button:hover:enabled {
+  filter: brightness(0.95);
 }
 
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
+button.ghost {
+  background: #e7edfb;
+  color: #2f6fed;
+}
 
-  a:hover {
-    color: #747bff;
-  }
+button.danger {
+  background: #f56565;
+}
 
-  button {
-    background-color: #f9f9f9;
+.dashboard {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.summary-cards .card {
+  padding: 16px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.summary-cards .label {
+  font-size: 13px;
+  color: #6b7a90;
+  margin: 0 0 6px;
+  text-transform: uppercase;
+}
+
+.summary-cards .value {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.summary-cards .income .value {
+  color: #2f9e44;
+}
+
+.summary-cards .expense .value {
+  color: #d9480f;
+}
+
+.summary-cards .balance {
+  background: linear-gradient(135deg, #2f6fed, #5b8df6);
+  color: #fff;
+}
+
+.panel {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  padding: 16px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.transaction-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.transaction-form label {
+  font-size: 13px;
+  color: #2b3350;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.transaction-form input,
+.transaction-form select,
+.reminder-form input {
+  padding: 10px;
+  border: 1px solid #dfe6f3;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.transaction-form .wide {
+  grid-column: 1 / -1;
+}
+
+.form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.transaction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.transaction-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #eef2f8;
+  border-radius: 10px;
+  background: #fafcff;
+}
+
+.transaction-card .icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.transaction-card .icon.income {
+  background: #eaf8f0;
+  color: #2f9e44;
+}
+
+.transaction-card .icon.expense {
+  background: #fff2ec;
+  color: #d9480f;
+}
+
+.transaction-card .info .title {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.transaction-card .info .note {
+  font-size: 12px;
+  color: #6b7a90;
+}
+
+.transaction-meta {
+  font-size: 12px;
+  color: #6b7a90;
+}
+
+.transaction-card .info .date {
+  margin-left: 8px;
+  color: #9aa7bc;
+}
+
+.transaction-card .amount-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.transaction-card .amount {
+  font-weight: 700;
+  min-width: 120px;
+  text-align: right;
+}
+
+.transaction-card .amount.income {
+  color: #2f9e44;
+}
+
+.transaction-card .amount.expense {
+  color: #d9480f;
+}
+
+.transaction-card .actions {
+  display: flex;
+  gap: 6px;
+}
+
+.invoice-banner {
+  background: #fff3cd;
+  color: #8a6d3b;
+  border: 1px solid #ffeeba;
+  padding: 10px 14px;
+  border-radius: 10px;
+}
+
+.invoice-banner.ok {
+  background: #e6ffed;
+  border-color: #b7f5c8;
+  color: #267a3f;
+}
+
+.invoice-banner.warning {
+  background: #fff3cd;
+  border-color: #ffeeba;
+  color: #8a6d3b;
+}
+
+.bar-chart {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  align-items: end;
+  gap: 6px;
+  height: 220px;
+  padding: 8px 0;
+}
+
+.bar {
+  background: #e7edfb;
+  border-radius: 8px 8px 4px 4px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bar.active {
+  background: #2f6fed;
+}
+
+.bar-value {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: #6b7a90;
+  white-space: nowrap;
+}
+
+.bar-label {
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: #2b3350;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+}
+
+.muted {
+  color: #6b7a90;
+  font-size: 14px;
+}
+
+.error {
+  color: #d9480f;
+  font-weight: 600;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 12px;
+}
+
+.category-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.category-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  border: 1px solid #eef2f8;
+  border-radius: 8px;
+}
+
+.category-row.header {
+  font-weight: 700;
+  background: #f4f7fc;
+}
+
+.reminder-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.reminder-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reminder-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  border: 1px solid #eef2f8;
+  border-radius: 10px;
+}
+
+.reminder-card .title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.badge.overdue {
+  background: #ffe0e0;
+  color: #d9480f;
+}
+
+.badge.upcoming {
+  background: #fff4e6;
+  color: #d97706;
+}
+
+.badge.paid {
+  background: #e6ffed;
+  color: #2f9e44;
+}
+
+.badge.pending {
+  background: #e7edfb;
+  color: #2f6fed;
+}
+
+@media (max-width: 640px) {
+  .transaction-card {
+    grid-template-columns: 1fr;
   }
 }
