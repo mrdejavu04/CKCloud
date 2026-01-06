@@ -11,12 +11,11 @@ const router = express.Router();
  */
 router.get("/summary", auth, async (req, res) => {
   try {
-    const uid = req.user && req.user.id ? req.user.id : req.userId;
-    if (!uid) {
+    if (!req.userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const userId = new mongoose.Types.ObjectId(uid);
+    const userId = new mongoose.Types.ObjectId(req.userId);
     const { from, to } = req.query;
     const matchStage = { userId };
 
@@ -83,13 +82,14 @@ router.get("/summary", auth, async (req, res) => {
  */
 router.get("/by-category", auth, async (req, res) => {
   try {
-    const uid = req.user && req.user.id ? req.user.id : req.userId;
-    if (!uid) return res.status(401).json({ message: "Unauthorized" });
+    if (!req.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
 
     const now = new Date();
     const year = parseInt(req.query.year, 10) || now.getFullYear();
     const month = parseInt(req.query.month, 10) || now.getMonth() + 1;
-    const userId = new mongoose.Types.ObjectId(uid);
+    const userId = new mongoose.Types.ObjectId(req.userId);
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 1);
 
@@ -131,8 +131,8 @@ router.get("/by-category", auth, async (req, res) => {
 router.get("/by_year", auth, async (req, res) => {
   try {
     const { year, month } = req.query;
-    const uid = req.user && req.user.id ? req.user.id : req.userId;
-    if (!uid) {
+
+    if (!req.userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
@@ -147,7 +147,7 @@ router.get("/by_year", auth, async (req, res) => {
       return res.status(400).json({ message: "Invalid year or month" });
     }
 
-    const userId = new mongoose.Types.ObjectId(uid);
+    const userId = new mongoose.Types.ObjectId(req.userId);
 
     const start = new Date(yearNum, monthNum ? monthNum - 1 : 0, 1);
     const end = new Date(
