@@ -30,8 +30,34 @@ function Dashboard() {
   const [error, setError] = useState('');
   const [pendingInvoices, setPendingInvoices] = useState(0);
   const [pendingList, setPendingList] = useState([]);
+  const [amountSuggestions, setAmountSuggestions] = useState([]);
   const [userName, setUserName] = useState('');
+  const [todayText, setTodayText] = useState('');
+
+  const formatTodayVN = (date = new Date()) => {
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    return `Hôm nay là ngày ${dd} tháng ${mm} năm ${yyyy}`;
+  };
+  useEffect(() => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    navigate('/');
+    return;
+  }
+
+  setTodayText(formatTodayVN());     // ✅ thêm dòng này
+  setDateTime(buildCurrentDateTime());
+  fetchTransactions(1);
+  fetchPendingInvoices();
+  fetchUser();
+  fetchAmountSuggestions();
+}, [navigate]);
+
+  // STATE CÔNG TẮC ĐỂ RESET BIỂU ĐỒ VÀ NHẮC NHỞ
   const [remindersRefresh, setRemindersRefresh] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const pad = (n) => n.toString().padStart(2, '0');
   const buildCurrentDateTime = (value) => {
@@ -98,7 +124,17 @@ function Dashboard() {
     fetchTransactions(1);
     fetchPendingInvoices();
     fetchUser();
+    fetchAmountSuggestions();
   }, [navigate]);
+
+  const fetchAmountSuggestions = async () => {
+    try {
+      const res = await axiosClient.get('/transactions/amount-suggestions');
+      setAmountSuggestions(Array.isArray(res.data?.amounts) ? res.data.amounts : []);
+    } catch (err) {
+      setAmountSuggestions([]);
+    }
+  };
 
   const fetchPendingInvoices = async () => {
     try {
@@ -158,7 +194,12 @@ function Dashboard() {
       setEditingId(null);
       fetchTransactions(pagination.page || 1);
       fetchPendingInvoices();
+      fetchAmountSuggestions();
+      
+      // CẬP NHẬT CÁC COMPONENT CON
       setRemindersRefresh((prev) => prev + 1);
+      setRefreshKey((prev) => prev + 1); // Cập nhật biểu đồ
+
     } catch (err) {
       setError('Có lỗi xảy ra');
       if (err.response?.status === 401) {
@@ -189,6 +230,10 @@ function Dashboard() {
       await axiosClient.delete(`/transactions/${transaction._id}`);
       const nextPage = transactions.length === 1 && (pagination.page || 1) > 1 ? (pagination.page || 1) - 1 : pagination.page;
       fetchTransactions(nextPage);
+      
+      // CẬP NHẬT BIỂU ĐỒ KHI XÓA
+      setRefreshKey((prev) => prev + 1);
+
     } catch (err) {
       setError('Có lỗi xảy ra');
     }
@@ -201,12 +246,17 @@ function Dashboard() {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    // clear cached suggestions
+    setAmountSuggestions([]);
     navigate('/');
   };
 
   const handleReminderPaid = () => {
     fetchPendingInvoices();
     fetchTransactions(pagination.page || 1);
+    
+    // CẬP NHẬT BIỂU ĐỒ KHI THANH TOÁN
+    setRefreshKey((prev) => prev + 1);
   };
 
   return (
@@ -214,7 +264,10 @@ function Dashboard() {
       <header className="header">
         <div>
           <h1>Quản lý chi tiêu</h1>
+  
           <p>Theo dõi thu chi, nhắc nhở hóa đơn</p>
+        <p>
+       <time dateTime={new Date().toISOString().slice(0, 10)}>{todayText}</time></p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span className="muted">Xin chào, {userName || 'bạn'}</span>
@@ -248,6 +301,7 @@ function Dashboard() {
           onAmountChange={handleAmountChange}
           dateTime={dateTime}
           onDateTimeChange={(e) => setDateTime(e.target.value)}
+          amountSuggestions={amountSuggestions}
         />
 
         <div className="panel">
@@ -270,7 +324,8 @@ function Dashboard() {
         </div>
       </div>
 
-      <MonthlyChart />
+      {/* TRUYỀN BIẾN RELOAD VÀO ĐÂY */}
+      <MonthlyChart refreshTrigger={refreshKey} />
 
       <TransactionList transactions={transactions} onEdit={handleEdit} onDelete={handleDelete} />
       <Pagination pagination={pagination} onPageChange={handlePageChange} />

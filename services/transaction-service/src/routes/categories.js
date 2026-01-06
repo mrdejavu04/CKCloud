@@ -8,7 +8,9 @@ router.use(auth);
 
 router.get('/', async (req, res) => {
   try {
-    const categories = await Category.find({ userId: req.userId }).sort({ createdAt: -1 });
+    const uid = req.user && req.user.id ? req.user.id : req.userId;
+    if (!uid) return res.status(401).json({ message: 'Unauthorized' });
+    const categories = await Category.find({ userId: uid }).sort({ createdAt: -1 });
     return res.json({ categories });
   } catch (error) {
     return res.status(500).json({ message: 'Failed to fetch categories', error: error.message });
@@ -22,7 +24,7 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Name and valid type are required' });
     }
 
-    const category = await Category.create({ userId: req.userId, name, type });
+    const category = await Category.create({ userId: req.user && req.user.id ? req.user.id : req.userId, name, type });
     return res.status(201).json({ category });
   } catch (error) {
     return res.status(500).json({ message: 'Failed to create category', error: error.message });

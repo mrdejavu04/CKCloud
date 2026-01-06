@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # --- BACKEND SERVICES ---
+  
+  user-service:
+    build: ./services/user-service
+    container_name: user-service
+    restart: always
+    ports:
+      - "${PORT_USER}:${PORT_USER}" # 5001:5001 (Để test Postman nếu cần)
+    environment:
+      # Kỹ thuật Mapping: Lấy biến _USER từ .env nạp vào thành MONGO_URI chuẩn cho code
+      - MONGO_URI=${MONGO_URI_USER} 
+      - JWT_SECRET=${JWT_SECRET}
+      - PORT=${PORT_USER}
+
+  transaction-service:
+    build: ./services/transaction-service
+    container_name: transaction-service
+    restart: always
+    ports:
+      - "${PORT_TRANS}:${PORT_TRANS}" # 5002:5002
+    environment:
+      - MONGO_URI=${MONGO_URI_TRANS}
+      - JWT_SECRET=${JWT_SECRET}
+      - PORT=${PORT_TRANS}
+
+  report-service:
+    build: ./services/report-service
+    container_name: report-service
+    restart: always
+    ports:
+      - "${PORT_REPORT}:${PORT_REPORT}" # 5003:5003
+    environment:
+      - MONGO_URI=${MONGO_URI_REPORT}
+      - JWT_SECRET=${JWT_SECRET}
+      - PORT=${PORT_REPORT}
+
+  # --- API GATEWAY ---
+  
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    restart: always
+    ports:
+      - "${PORT_GATEWAY}:${PORT_GATEWAY}" # 8080:8080 (Cổng chính cho API)
+    depends_on:
+      - user-service
+      - transaction-service
+      - report-service
+    environment:
+      - USER_SERVICE_URL=${USER_SERVICE_URL}
+      - TX_SERVICE_URL=${TX_SERVICE_URL}
+      - REPORT_SERVICE_URL=${REPORT_SERVICE_URL}
+      - PORT=${PORT_GATEWAY}
+
+  # --- FRONTEND ---
+  
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    restart: always
+    ports:
+      - "3000:80" # Map cổng 3000 máy bạn vào cổng 80 Nginx
+    depends_on:
+      - api-gateway

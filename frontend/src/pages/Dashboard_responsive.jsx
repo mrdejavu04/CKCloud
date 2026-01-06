@@ -13,6 +13,7 @@ function Dashboard() {
 
     // --- STATE QUẢN LÝ FORM NHẬP LIỆU ---
     const [amount, setAmount] = useState('');
+    const [amountSuggestions, setAmountSuggestions] = useState([]);
     const [category, setCategory] = useState('Ăn uống');
     const [type, setType] = useState('expense');
     const [description, setDescription] = useState('');
@@ -20,10 +21,10 @@ function Dashboard() {
     // --- 1. HÀM TẢI DỮ LIỆU TỪ SERVER ---
     const fetchData = async () => {
         try {
-            const userRes = await axiosClient.get('/api/users/me').catch(() => null);
+            const userRes = await axiosClient.get('/users/me').catch(() => null);
             if (userRes) setUser(userRes.data);
 
-            const transRes = await axiosClient.get('/api/transactions');
+            const transRes = await axiosClient.get('/transactions');
             console.log("Dữ liệu tải về:", transRes.data);
 
             if (Array.isArray(transRes.data)) {
@@ -54,14 +55,35 @@ function Dashboard() {
             return;
         }
         fetchData();
+        fetchAmountSuggestions();
     }, []);
 
+    const fetchAmountSuggestions = async () => {
+        try {
+            const res = await axiosClient.get('/transactions/amount-suggestions');
+            setAmountSuggestions(Array.isArray(res.data?.amounts) ? res.data.amounts : []);
+        } catch (err) {
+            setAmountSuggestions([]);
+        }
+    };
+
     // --- 2. HÀM XỬ LÝ THÊM GIAO DỊCH ---
+    const parseAmountInput = (val) => {
+        const s = String(val || '').trim();
+        if (!s) return NaN;
+        // remove all non-digit characters (thousand separators, spaces, currency symbols)
+        const digitsOnly = s.replace(/\D/g, '');
+        return digitsOnly === '' ? NaN : parseInt(digitsOnly, 10);
+    };
+
     const handleAddTransaction = async (e) => {
         e.preventDefault();
         try {
-            await axiosClient.post('/api/transactions', {
-                amount: Number(amount),
+            const parsedAmount = parseAmountInput(amount);
+            if (isNaN(parsedAmount)) throw new Error('Số tiền không hợp lệ');
+
+            await axiosClient.post('/transactions', {
+                amount: parsedAmount,
                 category,
                 type,
                 description,
@@ -509,10 +531,13 @@ function Dashboard() {
                                 Số Tiền
                             </label>
                             <input
-                                type="number"
+                                type="text"
+                                inputMode="numeric"
                                 placeholder="50000"
                                 value={amount}
                                 onChange={(e) => setAmount(e.target.value)}
+                                list="amount-suggestions"
+                                autoComplete="off"
                                 required
                                 style={{
                                     width: '100%',
@@ -537,6 +562,11 @@ function Dashboard() {
                                     e.target.style.boxShadow = 'none';
                                 }}
                             />
+                            <datalist id="amount-suggestions">
+                                {amountSuggestions.map((amt) => (
+                                    <option key={amt} value={Number(amt).toLocaleString('vi-VN')} />
+                                ))}
+                            </datalist>
                         </div>
 
                         {/* Danh Mục */}

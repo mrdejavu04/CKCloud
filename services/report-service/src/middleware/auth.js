@@ -10,7 +10,10 @@ const auth = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.userId = decoded.userId;
+    const id = decoded.id || decoded.userId || decoded._id;
+    if (!id) return res.status(401).json({ message: 'Unauthorized' });
+    req.user = { id: String(id) };
+    req.userId = String(id);
     return next();
   } catch (error) {
     return res.status(401).json({ message: 'Unauthorized' });

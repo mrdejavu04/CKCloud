@@ -11,6 +11,8 @@ const reminderSchema = new mongoose.Schema(
   { timestamps: { createdAt: true, updatedAt: false } }
 );
 
+reminderSchema.index({ userId: 1 });
+
 const Reminder = mongoose.model('Reminder', reminderSchema);
 
 export default Reminder;

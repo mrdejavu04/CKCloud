@@ -1,8 +1,11 @@
-
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';      // ✅ thêm
 import axiosClient from '../api/axiosClient';
+import moneycare from '../assets/moneycare.png';
 
 function Login() {
+    const navigate = useNavigate();                 // ✅ thêm
+
     const [isLogin, setIsLogin] = useState(true);
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -27,7 +30,12 @@ function Login() {
                 await axiosClient.post('/auth/register', { name, email, password });
                 setIsLogin(true);
             }
-            window.location.href = '/dashboard';
+
+            // ❌ KHÔNG dùng window.location.href nữa
+            // window.location.href = '/dashboard';
+
+            // ✅ dùng router để điều hướng, không reload trang
+            navigate('/dashboard');
         } catch (err) {
             console.error(err);
             setError(err.response?.data?.message || err.message || 'Đã có lỗi xảy ra');
@@ -52,9 +60,22 @@ function Login() {
                 boxShadow: '0 12px 40px rgba(11,43,69,0.12)', padding: '28px', boxSizing: 'border-box', border: '1px solid rgba(11,43,69,0.04)'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 10, background: 'linear-gradient(135deg,#1e3c72,#2a5298)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700 }}>CK</div>
-                    <div>
-                        <h1 style={{ margin: 0, fontSize: 18, color: '#1e3c72' }}>CKCloud</h1>
+<img
+  src={moneycare} 
+  alt="MoneyCare logo"
+  style={{
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    objectFit: 'contain',
+    background: '#fff',
+    boxShadow: '0 6px 16px rgba(11,43,69,0.12)',
+    border: '1px solid rgba(11,43,69,0.06)',
+    padding: 6,
+    boxSizing: 'border-box'
+  }}
+/>                    <div>
+                        <h1 style={{ margin: 0, fontSize: 18, color: '#1e3c72' }}>MoneyCare</h1>
                         <div style={{ fontSize: 12, color: '#7a8fa6' }}>{isLogin ? 'Đăng nhập để tiếp tục' : 'Tạo tài khoản mới'}</div>
                     </div>
                 </div>
@@ -84,12 +105,19 @@ function Login() {
                     <button type="submit" disabled={loading} style={{
                         width: '100%', padding: '12px', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 800,
                         color: '#fff', background: 'linear-gradient(90deg,#0b2b45,#123a62)', boxShadow: '0 8px 22px rgba(11,43,69,0.18)'
-                    }}>{loading ? (isLogin ? 'Đang đăng nhập...' : 'Đang đăng ký...') : (isLogin ? 'Đăng Nhập' : 'Đăng Ký')}</button>
+                    }}>
+                        {loading ? (isLogin ? 'Đang đăng nhập...' : 'Đang đăng ký...') : (isLogin ? 'Đăng Nhập' : 'Đăng Ký')}
+                    </button>
                 </form>
 
                 <div style={{ marginTop: 14, textAlign: 'center', fontSize: 13, color: '#7a8fa6' }}>
                     {isLogin ? 'Chưa có tài khoản? ' : 'Đã có tài khoản? '}
-                    <button onClick={() => { setIsLogin(!isLogin); setError(''); }} style={{ background: 'transparent', border: 'none', color: '#1e3c72', fontWeight: 700, cursor: 'pointer' }}>{isLogin ? 'Đăng ký' : 'Đăng nhập'}</button>
+                    <button
+                        onClick={() => { setIsLogin(!isLogin); setError(''); }}
+                        style={{ background: 'transparent', border: 'none', color: '#1e3c72', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                        {isLogin ? 'Đăng ký' : 'Đăng nhập'}
+                    </button>
                 </div>
             </div>
         </div>

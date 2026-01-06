@@ -9,8 +9,11 @@ router.use(auth);
 
 router.get('/summary', async (req, res) => {
   try {
+    const uid = req.user && req.user.id ? req.user.id : req.userId;
+    if (!uid) return res.status(401).json({ message: 'Unauthorized' });
+
     const pending = await Reminder.find({
-      userId: req.userId,
+      userId: uid,
       status: 'pending',
     })
       .sort({ dueDate: 1 })
@@ -36,7 +39,9 @@ router.get('/', async (req, res) => {
     const { page = 1, limit = 5 } = req.query;
     const pageNum = Number(page);
     const limitNum = Number(limit);
-    const filter = { userId: req.userId };
+    const uid = req.user && req.user.id ? req.user.id : req.userId;
+    if (!uid) return res.status(401).json({ message: 'Unauthorized' });
+    const filter = { userId: uid };
 
     const [reminders, total] = await Promise.all([
       Reminder.find(filter)
@@ -87,7 +92,7 @@ router.post('/', async (req, res) => {
     }
 
     const reminder = await Reminder.create({
-      userId: req.userId,
+      userId: req.user && req.user.id ? req.user.id : req.userId,
       title,
       amount,
       dueDate,
@@ -104,7 +109,7 @@ router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { title, amount, dueDate, status } = req.body;
-    const reminder = await Reminder.findOne({ _id: id, userId: req.userId });
+    const reminder = await Reminder.findOne({ _id: id, userId: req.user && req.user.id ? req.user.id : req.userId });
     if (!reminder) {
       return res.status(404).json({ message: 'Reminder not found' });
     }
@@ -121,7 +126,7 @@ router.put('/:id', async (req, res) => {
       const txDate = reminder.dueDate ? new Date(reminder.dueDate) : new Date();
       txDate.setSeconds(0, 0);
       await Transaction.create({
-        userId: req.userId,
+        userId: req.user && req.user.id ? req.user.id : req.userId,
         amount: reminder.amount,
         type: 'expense',
         categoryName: 'Hóa đơn',

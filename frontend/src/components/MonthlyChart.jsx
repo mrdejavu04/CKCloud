@@ -6,13 +6,15 @@ const COLORS = ['#2f6fed', '#d9480f', '#2f9e44', '#f59f00', '#845ef7', '#15aabf'
 
 const getMonthName = (m) => `Tháng ${m}`;
 
-function MonthlyChart() {
+// NHẬN PROP refreshTrigger
+function MonthlyChart({ refreshTrigger }) {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
   const totalExpense = chartData.reduce((sum, item) => sum + (item.total || 0), 0);
   const sorted = [...chartData].sort((a, b) => (b.total || 0) - (a.total || 0));
   const top = sorted.slice(0, 5);
@@ -36,7 +38,8 @@ function MonthlyChart() {
       }
     };
     fetchData();
-  }, [year, month]);
+  // THÊM refreshTrigger VÀO ĐÂY ĐỂ TỰ RELOAD KHI CÓ LỆNH
+  }, [year, month, refreshTrigger]);
 
   const prevMonth = () => setMonth((m) => (m === 1 ? 12 : m - 1));
   const nextMonth = () => setMonth((m) => (m === 12 ? 1 : m + 1));

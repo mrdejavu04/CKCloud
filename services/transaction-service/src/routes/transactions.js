@@ -22,7 +22,9 @@ router.get('/', async (req, res) => {
     const { page = 1, limit = 15 } = req.query;
     const pageNum = Number(page) || 1;
     const limitNum = Number(limit) || 15;
-    const query = { userId: req.userId };
+    const uid = req.user && req.user.id ? req.user.id : req.userId;
+    if (!uid) return res.status(401).json({ message: 'Unauthorized' });
+    const query = { userId: uid };
 
     if (type && ['income', 'expense'].includes(type)) {
       query.type = type;
@@ -61,6 +63,7 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     let { amount, type, categoryId, categoryName, note, dateTime } = req.body;
+    const uid = req.user && req.user.id ? req.user.id : req.userId;
     if (!amount || !type) {
       return res.status(400).json({ message: 'Amount and type are required' });
     }
@@ -73,14 +76,12 @@ router.post('/', async (req, res) => {
 
     let resolvedCategoryName = categoryName;
     if (categoryId) {
-      const category = await Category.findOne({ _id: categoryId, userId: req.userId });
-      if (category) {
-        resolvedCategoryName = category.name;
-      }
+      const category = await Category.findOne({ _id: categoryId, userId: uid });
+      if (category) resolvedCategoryName = category.name;
     }
 
     const transaction = await Transaction.create({
-      userId: req.userId,
+      userId: uid,
       amount,
       type,
       categoryId,
@@ -92,7 +93,7 @@ router.post('/', async (req, res) => {
     const normalized = normalizeVietnamese(resolvedCategoryName || categoryName || '');
     if (type === 'expense' && normalized === 'hoa don') {
       await Reminder.create({
-        userId: req.userId,
+        userId: uid,
         title: note || 'Hóa đơn',
         amount,
         dueDate: txDate,
@@ -120,7 +121,7 @@ router.put('/:id', async (req, res) => {
     if (date !== undefined) updates.date = date;
 
     const transaction = await Transaction.findOneAndUpdate(
-      { _id: id, userId: req.userId },
+      { _id: id, userId: req.user && req.user.id ? req.user.id : req.userId },
       updates,
       { new: true }
     );
@@ -138,11 +139,25 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const deleted = await Transaction.findOneAndDelete({ _id: id, userId: req.userId });
+    const deleted = await Transaction.findOneAndDelete({ _id: id, userId: req.user && req.user.id ? req.user.id : req.userId });
     if (!deleted) {
       return res.status(404).json({ message: 'Transaction not found' });
     }
     return res.json({ message: 'Deleted successfully' });
+  } catch (error) {
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET /transactions/amount-suggestions
+router.get('/amount-suggestions', async (req, res) => {
+  try {
+    const uid = req.user && req.user.id ? req.user.id : req.userId;
+    if (!uid) return res.status(401).json({ message: 'Unauthorized' });
+    let amounts = await Transaction.distinct('amount', { userId: uid });
+    amounts = amounts.filter((a) => typeof a === 'number');
+    amounts.sort((a, b) => b - a);
+    return res.json({ amounts: amounts.slice(0, 20) });
   } catch (error) {
     return res.status(500).json({ message: 'Server error' });
   }

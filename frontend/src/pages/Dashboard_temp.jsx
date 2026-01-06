@@ -8,16 +8,17 @@ function Dashboard() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [amount, setAmount] = useState("");
+    const [amountSuggestions, setAmountSuggestions] = useState([]);
     const [category, setCategory] = useState("Ăn uống");
     const [type, setType] = useState("expense");
     const [description, setDescription] = useState("");
 
     const fetchData = async () => {
         try {
-            const userRes = await axiosClient.get("/api/users/me").catch(() => null);
+            const userRes = await axiosClient.get("/users/me").catch(() => null);
             if (userRes) setUser(userRes.data);
 
-            const transRes = await axiosClient.get("/api/transactions");
+            const transRes = await axiosClient.get("/transactions");
             if (Array.isArray(transRes.data)) {
                 setTransactions(transRes.data);
             } else if (transRes.data?.data) {
@@ -45,13 +46,33 @@ function Dashboard() {
             return;
         }
         fetchData();
+        fetchAmountSuggestions();
     }, [navigate]);
+
+    const fetchAmountSuggestions = async () => {
+        try {
+            const res = await axiosClient.get('/transactions/amount-suggestions');
+            setAmountSuggestions(Array.isArray(res.data?.amounts) ? res.data.amounts : []);
+        } catch (err) {
+            setAmountSuggestions([]);
+        }
+    };
+
+    const parseAmountInput = (val) => {
+        const s = String(val || '').trim();
+        if (!s) return NaN;
+        const digitsOnly = s.replace(/\D/g, '');
+        return digitsOnly === '' ? NaN : parseInt(digitsOnly, 10);
+    };
 
     const handleAddTransaction = async (e) => {
         e.preventDefault();
         try {
-            await axiosClient.post("/api/transactions", {
-                amount: Number(amount),
+            const parsedAmount = parseAmountInput(amount);
+            if (isNaN(parsedAmount)) throw new Error('Số tiền không hợp lệ');
+
+            await axiosClient.post("/transactions", {
+                amount: parsedAmount,
                 category,
                 type,
                 description,
@@ -242,7 +263,7 @@ function Dashboard() {
 
                     <div>
                         <label style={{ display: "block", fontSize: "10px", fontWeight: "600", color: "#1e3c72", marginBottom: "4px", textTransform: "uppercase" }}>Số Tiền</label>
-                        <input type="number" placeholder="50000" value={amount} onChange={(e) => setAmount(e.target.value)} required
+                        <input type="text" inputMode="numeric" placeholder="50000" value={amount} onChange={(e) => setAmount(e.target.value)} list="amount-suggestions" autoComplete="off" required
                             style={{
                                 width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #e8ecf1",
                                 background: "#f8fafb", fontSize: "12px", fontWeight: "500", color: "#1e3c72",
@@ -256,6 +277,11 @@ function Dashboard() {
                                 e.currentTarget.style.borderColor = "#e8ecf1";
                                 e.currentTarget.style.background = "#f8fafb";
                             }} />
+                        <datalist id="amount-suggestions">
+                            {amountSuggestions.map((amt) => (
+                                <option key={amt} value={Number(amt).toLocaleString('vi-VN')} />
+                            ))}
+                        </datalist>
                     </div>
 
                     <div>

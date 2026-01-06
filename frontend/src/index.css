@@ -122,7 +122,13 @@ button.danger {
   background: linear-gradient(135deg, #2f6fed, #5b8df6);
   color: #fff;
 }
+.summary-cards .balance .label {
+  color: rgba(255, 255, 255, 0.9);
+}
 
+.summary-cards .balance .value {
+  color: #ffffff;
+}
 .panel {
   background: #fff;
   border-radius: 12px;

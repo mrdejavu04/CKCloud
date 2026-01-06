@@ -8,6 +8,7 @@ function TransactionForm({
   onAmountChange,
   dateTime,
   onDateTimeChange,
+  amountSuggestions = [],
 }) {
   return (
     <div className="panel">
@@ -34,8 +35,15 @@ function TransactionForm({
             inputMode="numeric"
             value={amountInput}
             onChange={onAmountChange}
+            list="amount-suggestions"
+            autoComplete="off"
             required
           />
+          <datalist id="amount-suggestions">
+            {amountSuggestions.map((amt) => (
+              <option key={amt} value={Number(amt).toLocaleString('vi-VN')} />
+            ))}
+          </datalist>
         </label>
         <label>
           Danh mục
@@ -45,6 +53,7 @@ function TransactionForm({
             value={formData.categoryName}
             onChange={onChange}
             required
+            autoComplete="off"
           />
         </label>
         <label className="wide">
@@ -55,6 +64,7 @@ function TransactionForm({
             value={formData.note}
             onChange={onChange}
             placeholder="Nhập ghi chú"
+            autoComplete="off"
           />
         </label>
         <label>
