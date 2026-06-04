@@ -8,7 +8,7 @@ export default defineConfig({
     proxy: {
       // Khi nào gọi đường dẫn bắt đầu bằng /api
       '/api': {
-        target: 'http://localhost:5000', // Tự động chuyển hướng sang Backend
+        target: 'http://localhost:8080', // Tự động chuyển hướng sang API Gateway ở máy dev
         changeOrigin: true,
         secure: false,
       },
