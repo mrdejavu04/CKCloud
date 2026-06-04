@@ -33,7 +33,7 @@ services:
     ports:
       - "${PORT_REPORT}:${PORT_REPORT}" # 5003:5003
     environment:
-      - MONGO_URI=${MONGO_URI_REPORT}
+      - MONGO_URI=${MONGO_URI_TRANS}
       - JWT_SECRET=${JWT_SECRET}
       - PORT=${PORT_REPORT}
 
