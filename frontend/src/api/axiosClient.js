@@ -2,7 +2,7 @@ import axios from 'axios';
 
 
 const axiosClient = axios.create({
-  baseURL: 'http://moneycare-alb-1679138998.ap-southeast-2.elb.amazonaws.com/api',
+  baseURL: '/api',
   headers: { 'Content-Type': 'application/json' },
 });
 
